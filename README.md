@@ -3,12 +3,27 @@
 [![Licencia MIT](https://img.shields.io/badge/licencia-MIT-22c55e.svg)](LICENSE)
 [![Deploy a GitHub Pages](https://github.com/Mvega5310/snake/actions/workflows/deploy.yml/badge.svg)](https://github.com/Mvega5310/snake/actions/workflows/deploy.yml)
 
-Snake clásico en **JavaScript vanilla + Canvas**, sin frameworks ni build step.
-Pensado como base de aprendizaje del *game loop* que luego se reutiliza para
-otros prototipos (Tetris, Tower Defense, etc.).
+Snake clásico y **didáctico** en **JavaScript vanilla + Canvas**, sin frameworks ni
+build step. Instalable como app (PWA, funciona offline) y pensado para enseñar
+jugando: los colores tienen significado pedagógico y hay una leyenda al empezar.
 
-**🎮 Jugar en vivo:** https://mvega5310.github.io/snake/
-*(requiere activar GitHub Pages en Settings → Pages → Source: "GitHub Actions")*
+**🎮 Jugar en vivo:** https://mvega5310.github.io/snake/ — abrilo en el celular y
+tocá "📲 Instalar juego" (o el ícono de instalar del navegador) para agregarlo a
+la pantalla de inicio como una app nativa.
+
+## Psicología del color (diseño pensado para aprender)
+
+| Color      | Elemento              | Qué le enseña al jugador        |
+|------------|------------------------|----------------------------------|
+| 🟢 Verde   | La serpiente           | Crecer / avanzar — asociación positiva |
+| 🟠 Naranja | La comida              | Recompensa — "esto suma, andá por eso" |
+| 🔴 Rojo    | Choque / Game Over     | Peligro universal — frená, cuidado |
+| 🟡 Dorado  | Logros                 | Mérito, algo especial que ganaste |
+| 🔵 Azul    | Pausa                  | Calma — tomate tu tiempo sin presión |
+
+La primera vez que se abre el juego (o tocando el botón ❔), se muestra una leyenda
+que explica esto antes de empezar a jugar — el juego se pausa automáticamente
+mientras se lee, para que nadie choque mientras aprende las reglas.
 
 ## Controles
 
@@ -42,10 +57,14 @@ Prototipo de Snake en JavaScript puro + Canvas, pensado como base de aprendizaje
 ### 3.1 Estructura de archivos
 ```
 snake/
-├── index.html                      # Estructura HTML + canvas + HUD
+├── index.html                      # Estructura HTML + canvas + HUD + leyenda de colores
 ├── style.css                       # Estilos visuales (responsive)
-├── game.js                         # Toda la lógica del juego
-├── favicon.svg                     # Ícono del sitio
+├── game.js                         # Toda la lógica del juego + registro de la PWA
+├── manifest.json                   # Manifest de la PWA (nombre, íconos, modo standalone)
+├── sw.js                           # Service worker: cachea assets para que funcione offline
+├── icon-source.svg                 # Ícono maestro (editable)
+├── icon-192.png / icon-512.png / icon-512-maskable.png   # Íconos generados para la PWA
+├── favicon.svg                     # Ícono de la pestaña del navegador
 ├── LICENSE                         # Licencia MIT
 ├── .gitignore
 ├── .github/workflows/deploy.yml    # CI: publica en GitHub Pages en cada push a main
@@ -98,7 +117,11 @@ speedMs = 130                                             // intervalo actual de
 4. ✅ Guardar puntaje máximo en `localStorage`
 5. ✅ Pausa, sonido y controles táctiles para móvil
 6. ✅ Despliegue continuo a GitHub Pages vía GitHub Actions
-7. Modo "paredes atraviesan" (teletransporte en bordes) como variante
+7. ✅ PWA instalable y offline (manifest + service worker + íconos)
+8. ✅ Rediseño con psicología del color + leyenda didáctica
+9. 🚧 Modos de juego (Clásico / Sin Paredes / Modo Calma)
+10. 🚧 Logros y misiones guardados localmente
+11. 🚧 Tabla de mejores puntajes local (top 5)
 
 ## 5. Siguiente paso: Tetris
 Reutilizamos exactamente este mismo patrón de Game Loop y estructura de carpetas.

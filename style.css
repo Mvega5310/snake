@@ -38,6 +38,11 @@ h1 {
   color: #9ca3af;
 }
 
+.hud-buttons {
+  display: flex;
+  gap: 4px;
+}
+
 canvas {
   background: #1f2937;
   border: 2px solid #374151;
@@ -49,6 +54,16 @@ canvas {
   height: auto;
   aspect-ratio: 1 / 1;
   touch-action: none;
+  transition: border-color 0.15s ease;
+}
+
+canvas.danger-flash {
+  animation: dangerFlash 0.4s ease;
+}
+
+@keyframes dangerFlash {
+  0%, 100% { border-color: #374151; }
+  25%, 75% { border-color: #f87171; }
 }
 
 .hint {
@@ -61,7 +76,8 @@ canvas {
   display: none;
 }
 
-#muteBtn {
+#muteBtn,
+#legendBtn {
   border: none;
   background: transparent;
   color: #9ca3af;
@@ -71,7 +87,8 @@ canvas {
   padding: 2px 4px;
 }
 
-#muteBtn:hover {
+#muteBtn:hover,
+#legendBtn:hover {
   color: #f3f4f6;
 }
 
@@ -83,12 +100,15 @@ canvas {
 #gameOverScreen p,
 #pauseScreen p {
   font-size: 20px;
-  color: #f87171;
   margin-bottom: 8px;
 }
 
+#gameOverScreen p {
+  color: #f87171;
+}
+
 #pauseScreen p {
-  color: #facc15;
+  color: #60a5fa;
 }
 
 #restartBtn {
@@ -102,5 +122,91 @@ canvas {
 }
 
 #restartBtn:hover {
+  background: #16a34a;
+}
+
+#installBtn {
+  margin-top: 12px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #60a5fa;
+  color: #111827;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#installBtn:hover {
+  background: #3b82f6;
+}
+
+/* ==============================
+   Leyenda de colores (overlay)
+   ============================== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 10;
+}
+
+.legend-card {
+  background: #1f2937;
+  border: 2px solid #374151;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: left;
+}
+
+.legend-card h2 {
+  font-size: 18px;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.legend-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+  font-size: 14px;
+  color: #e5e7eb;
+}
+
+.swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.swatch-green { background: #4ade80; }
+.swatch-orange { background: #fb923c; }
+.swatch-red { background: #f87171; }
+.swatch-gold { background: #facc15; }
+.swatch-blue { background: #60a5fa; }
+
+#legendCloseBtn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  background: #22c55e;
+  color: #111827;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#legendCloseBtn:hover {
   background: #16a34a;
 }

@@ -3,9 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Snake clásico en JavaScript vanilla + Canvas, con controles de teclado y táctiles, pausa, velocidad progresiva y sonido." />
+  <meta name="description" content="Snake clásico y didáctico en JavaScript vanilla + Canvas: colores con significado, retos, logros y modo offline instalable." />
+  <meta name="theme-color" content="#111827" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Snake" />
   <title>Snake</title>
+  <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -14,7 +20,10 @@
     <div class="hud">
       <span>Puntaje: <strong id="score" aria-live="polite">0</strong></span>
       <span>Máximo: <strong id="highscore">0</strong></span>
-      <button id="muteBtn" aria-label="Silenciar sonido" aria-pressed="false">🔊</button>
+      <div class="hud-buttons">
+        <button id="legendBtn" aria-label="Ver qué significan los colores">❔</button>
+        <button id="muteBtn" aria-label="Silenciar sonido" aria-pressed="false">🔊</button>
+      </div>
     </div>
 
     <canvas id="gameCanvas" width="400" height="400"></canvas>
@@ -29,6 +38,22 @@
     </div>
 
     <p class="hint">Flechas o deslizá el dedo para moverte · Espacio para pausar</p>
+
+    <button id="installBtn" class="hidden" type="button">📲 Instalar juego</button>
+  </div>
+
+  <div id="legendScreen" class="overlay hidden">
+    <div class="legend-card">
+      <h2>¿Qué significa cada color?</h2>
+      <ul class="legend-list">
+        <li><span class="swatch swatch-green"></span> Verde: tu serpiente — ¡crece cuando come!</li>
+        <li><span class="swatch swatch-orange"></span> Naranja: la comida — cómela para sumar puntos</li>
+        <li><span class="swatch swatch-red"></span> Rojo: peligro — no choques con el borde ni con tu cuerpo</li>
+        <li><span class="swatch swatch-gold"></span> Dorado: logros que vas desbloqueando</li>
+        <li><span class="swatch swatch-blue"></span> Azul: pausa — tomate tu tiempo</li>
+      </ul>
+      <button id="legendCloseBtn">¡Entendido, a jugar!</button>
+    </div>
   </div>
 
   <script src="game.js"></script>

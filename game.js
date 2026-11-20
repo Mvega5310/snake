@@ -16,6 +16,18 @@ const gameOverScreen = document.getElementById("gameOverScreen");
 const pauseScreen = document.getElementById("pauseScreen");
 const restartBtn = document.getElementById("restartBtn");
 const muteBtn = document.getElementById("muteBtn");
+const legendScreen = document.getElementById("legendScreen");
+const legendBtn = document.getElementById("legendBtn");
+const legendCloseBtn = document.getElementById("legendCloseBtn");
+const installBtn = document.getElementById("installBtn");
+
+// Paleta con intención pedagógica (psicología del color):
+// verde = crecer/avanzar, naranja = recompensa, rojo = peligro,
+// dorado = logro, azul = calma/pausa.
+const COLOR_SNAKE_HEAD = "#22c55e";
+const COLOR_SNAKE_BODY = "#4ade80";
+const COLOR_FOOD = "#fb923c";
+const COLOR_BG = "#1f2937";
 
 // ==============================
 // ESTADO DEL JUEGO
@@ -114,6 +126,7 @@ function endGame() {
   gameOver = true;
   clearInterval(loopInterval);
   playGameOverSound();
+  flashDanger();
 
   if (score > highscore) {
     highscore = score;
@@ -124,21 +137,42 @@ function endGame() {
   gameOverScreen.classList.remove("hidden");
 }
 
+function flashDanger() {
+  canvas.classList.remove("danger-flash");
+  // forzar reflow para poder re-disparar la animación en choques consecutivos
+  void canvas.offsetWidth;
+  canvas.classList.add("danger-flash");
+}
+
 // ==============================
 // RENDERIZADO
 // ==============================
+function drawCell(x, y, color) {
+  const px = x * GRID_SIZE;
+  const py = y * GRID_SIZE;
+  const size = GRID_SIZE - 2;
+  const radius = 5;
+
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(px, py, size, size, radius);
+  } else {
+    ctx.rect(px, py, size, size);
+  }
+  ctx.fill();
+}
+
 function draw() {
-  ctx.fillStyle = "#1f2937";
+  ctx.fillStyle = COLOR_BG;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Comida
-  ctx.fillStyle = "#f87171";
-  ctx.fillRect(food.x * GRID_SIZE, food.y * GRID_SIZE, GRID_SIZE - 2, GRID_SIZE - 2);
+  // Comida (naranja = recompensa)
+  drawCell(food.x, food.y, COLOR_FOOD);
 
-  // Serpiente
+  // Serpiente (verde = crecer/avanzar)
   snake.forEach((seg, i) => {
-    ctx.fillStyle = i === 0 ? "#22c55e" : "#4ade80";
-    ctx.fillRect(seg.x * GRID_SIZE, seg.y * GRID_SIZE, GRID_SIZE - 2, GRID_SIZE - 2);
+    drawCell(seg.x, seg.y, i === 0 ? COLOR_SNAKE_HEAD : COLOR_SNAKE_BODY);
   });
 }
 
@@ -208,6 +242,8 @@ muteBtn.addEventListener("click", () => {
 document.addEventListener("keydown", (e) => {
   const key = e.key;
 
+  if (!legendScreen.classList.contains("hidden")) return;
+
   if (key === " " || key === "Spacebar") {
     e.preventDefault();
     return togglePause();
@@ -262,6 +298,66 @@ canvas.addEventListener(
 restartBtn.addEventListener("click", resetGame);
 
 // ==============================
+// LEYENDA DE COLORES (onboarding didáctico)
+// ==============================
+let pausedByLegend = false;
+
+function showLegend() {
+  legendScreen.classList.remove("hidden");
+  if (!gameOver && !paused) {
+    pausedByLegend = true;
+    paused = true;
+    pauseScreen.classList.remove("hidden");
+  }
+}
+
+function hideLegend() {
+  legendScreen.classList.add("hidden");
+  localStorage.setItem("snake-seen-legend", "true");
+  if (pausedByLegend) {
+    pausedByLegend = false;
+    paused = false;
+    pauseScreen.classList.add("hidden");
+  }
+}
+
+legendBtn.addEventListener("click", showLegend);
+legendCloseBtn.addEventListener("click", hideLegend);
+
+// ==============================
+// PWA: instalación y service worker
+// ==============================
+let deferredInstallPrompt = null;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  installBtn.classList.remove("hidden");
+});
+
+installBtn.addEventListener("click", async () => {
+  if (!deferredInstallPrompt) return;
+  installBtn.classList.add("hidden");
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+});
+
+window.addEventListener("appinstalled", () => {
+  installBtn.classList.add("hidden");
+});
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+
+// ==============================
 // INICIO
 // ==============================
 resetGame();
+
+if (!localStorage.getItem("snake-seen-legend")) {
+  showLegend();
+}
