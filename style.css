@@ -16,6 +16,10 @@ body {
 
 .game-container {
   text-align: center;
+  width: 100%;
+  max-width: 400px;
+  padding: 0 16px;
+  margin: 0 auto;
 }
 
 h1 {
@@ -25,8 +29,10 @@ h1 {
 
 .hud {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  width: 400px;
+  gap: 8px;
+  width: 100%;
   margin: 0 auto 8px;
   font-size: 14px;
   color: #9ca3af;
@@ -38,6 +44,11 @@ canvas {
   border-radius: 8px;
   display: block;
   margin: 0 auto;
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  touch-action: none;
 }
 
 .hint {
@@ -50,14 +61,34 @@ canvas {
   display: none;
 }
 
-#gameOverScreen {
+#muteBtn {
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+}
+
+#muteBtn:hover {
+  color: #f3f4f6;
+}
+
+#gameOverScreen,
+#pauseScreen {
   margin-top: 12px;
 }
 
-#gameOverScreen p {
+#gameOverScreen p,
+#pauseScreen p {
   font-size: 20px;
   color: #f87171;
   margin-bottom: 8px;
+}
+
+#pauseScreen p {
+  color: #facc15;
 }
 
 #restartBtn {

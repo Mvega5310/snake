@@ -2,25 +2,33 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Snake — Prototipo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Snake clásico en JavaScript vanilla + Canvas, con controles de teclado y táctiles, pausa, velocidad progresiva y sonido." />
+  <title>Snake</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="game-container">
     <h1>Snake</h1>
     <div class="hud">
-      <span>Puntaje: <strong id="score">0</strong></span>
+      <span>Puntaje: <strong id="score" aria-live="polite">0</strong></span>
       <span>Máximo: <strong id="highscore">0</strong></span>
+      <button id="muteBtn" aria-label="Silenciar sonido" aria-pressed="false">🔊</button>
     </div>
 
     <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+    <div id="pauseScreen" class="hidden">
+      <p>Pausado</p>
+    </div>
 
     <div id="gameOverScreen" class="hidden">
       <p>Game Over</p>
       <button id="restartBtn">Reiniciar</button>
     </div>
 
-    <p class="hint">Usa las flechas del teclado para moverte</p>
+    <p class="hint">Flechas o deslizá el dedo para moverte · Espacio para pausar</p>
   </div>
 
   <script src="game.js"></script>
