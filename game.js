@@ -20,6 +20,23 @@ const legendScreen = document.getElementById("legendScreen");
 const legendBtn = document.getElementById("legendBtn");
 const legendCloseBtn = document.getElementById("legendCloseBtn");
 const installBtn = document.getElementById("installBtn");
+const modeScreen = document.getElementById("modeScreen");
+const modeBtn = document.getElementById("modeBtn");
+const modeCancelBtn = document.getElementById("modeCancelBtn");
+const modeOptionButtons = document.querySelectorAll(".mode-option");
+const achievementsScreen = document.getElementById("achievementsScreen");
+const achievementsBtn = document.getElementById("achievementsBtn");
+const achievementsCloseBtn = document.getElementById("achievementsCloseBtn");
+const achievementsList = document.getElementById("achievementsList");
+const leaderboardScreen = document.getElementById("leaderboardScreen");
+const leaderboardBtn = document.getElementById("leaderboardBtn");
+const leaderboardCloseBtn = document.getElementById("leaderboardCloseBtn");
+const leaderboardList = document.getElementById("leaderboardList");
+const nameEntryScreen = document.getElementById("nameEntryScreen");
+const nameEntryScore = document.getElementById("nameEntryScore");
+const nameInput = document.getElementById("nameInput");
+const nameSaveBtn = document.getElementById("nameSaveBtn");
+const achievementToast = document.getElementById("achievementToast");
 
 // Paleta con intención pedagógica (psicología del color):
 // verde = crecer/avanzar, naranja = recompensa, rojo = peligro,
@@ -30,11 +47,37 @@ const COLOR_FOOD = "#fb923c";
 const COLOR_BG = "#1f2937";
 
 // ==============================
+// MODOS DE JUEGO
+// ==============================
+const MODES = {
+  classic: { id: "classic", label: "Clásico", wrap: false, progressiveSpeed: true, baseSpeed: BASE_SPEED_MS },
+  noWalls: { id: "noWalls", label: "Sin Paredes", wrap: true, progressiveSpeed: true, baseSpeed: BASE_SPEED_MS },
+  calm: { id: "calm", label: "Modo Calma", wrap: false, progressiveSpeed: false, baseSpeed: 170 },
+};
+let currentMode = MODES.classic;
+
+// ==============================
+// LOGROS
+// ==============================
+const ACHIEVEMENTS = [
+  { id: "primera-manzana", title: "Primera manzana", desc: "Comé tu primera comida." },
+  { id: "serpiente-larga", title: "Serpiente larga", desc: "Alcanzá una serpiente de 10 segmentos." },
+  { id: "diez-puntos", title: "Diez puntos", desc: "Llegá a un puntaje de 10." },
+  { id: "treinta-segundos", title: "Resistencia", desc: "Sobreviví 30 segundos sin chocar." },
+  { id: "cinco-partidas", title: "Jugador constante", desc: "Jugá 5 partidas." },
+  { id: "explorador", title: "Explorador", desc: "Probá los 3 modos de juego." },
+];
+
+// ==============================
 // ESTADO DEL JUEGO
 // ==============================
 let snake, direction, nextDirection, food, score, gameOver, paused, speedMs, loopInterval;
+let runStartedAt = 0;
+let pendingScore = 0;
 let highscore = Number(localStorage.getItem("snake-highscore")) || 0;
 let muted = localStorage.getItem("snake-muted") === "true";
+let gamesPlayed = Number(localStorage.getItem("snake-games-played")) || 0;
+let modesPlayed = new Set(JSON.parse(localStorage.getItem("snake-modes-played") || "[]"));
 highscoreEl.textContent = highscore;
 updateMuteButton();
 
@@ -50,16 +93,21 @@ function resetGame() {
   score = 0;
   gameOver = false;
   paused = false;
-  speedMs = BASE_SPEED_MS;
+  speedMs = currentMode.baseSpeed;
+  runStartedAt = Date.now();
 
   scoreEl.textContent = score;
   gameOverScreen.classList.add("hidden");
   pauseScreen.classList.add("hidden");
 
+  modesPlayed.add(currentMode.id);
+  localStorage.setItem("snake-modes-played", JSON.stringify([...modesPlayed]));
+
   if (loopInterval) clearInterval(loopInterval);
   loopInterval = setInterval(gameLoop, speedMs);
 
   draw();
+  checkAchievements();
 }
 
 // ==============================
@@ -84,9 +132,14 @@ function update() {
     y: snake[0].y + direction.y,
   };
 
-  // Colisión con bordes
+  // Colisión con bordes: en "Sin Paredes" se teletransporta al lado opuesto
   if (head.x < 0 || head.x >= GRID_COUNT || head.y < 0 || head.y >= GRID_COUNT) {
-    return endGame();
+    if (currentMode.wrap) {
+      head.x = (head.x + GRID_COUNT) % GRID_COUNT;
+      head.y = (head.y + GRID_COUNT) % GRID_COUNT;
+    } else {
+      return endGame();
+    }
   }
 
   // Colisión con su propio cuerpo
@@ -106,10 +159,13 @@ function update() {
   } else {
     snake.pop(); // si no comió, se mueve (quita la cola)
   }
+
+  checkAchievements();
 }
 
 function speedUp() {
-  const target = Math.max(MIN_SPEED_MS, BASE_SPEED_MS - score * SPEED_STEP_MS);
+  if (!currentMode.progressiveSpeed) return;
+  const target = Math.max(MIN_SPEED_MS, currentMode.baseSpeed - score * SPEED_STEP_MS);
   if (target === speedMs) return;
   speedMs = target;
   clearInterval(loopInterval);
@@ -134,7 +190,19 @@ function endGame() {
     highscoreEl.textContent = highscore;
   }
 
+  gamesPlayed++;
+  localStorage.setItem("snake-games-played", String(gamesPlayed));
+  checkAchievements();
+
   gameOverScreen.classList.remove("hidden");
+
+  if (qualifiesForLeaderboard(score)) {
+    pendingScore = score;
+    nameEntryScore.textContent = score;
+    nameInput.value = "";
+    nameEntryScreen.classList.remove("hidden");
+    nameInput.focus();
+  }
 }
 
 function flashDanger() {
@@ -242,7 +310,7 @@ muteBtn.addEventListener("click", () => {
 document.addEventListener("keydown", (e) => {
   const key = e.key;
 
-  if (!legendScreen.classList.contains("hidden")) return;
+  if (anyOverlayOpen()) return;
 
   if (key === " " || key === "Spacebar") {
     e.preventDefault();
@@ -298,31 +366,264 @@ canvas.addEventListener(
 restartBtn.addEventListener("click", resetGame);
 
 // ==============================
-// LEYENDA DE COLORES (onboarding didáctico)
+// OVERLAYS: pausa compartida + helper de "hay alguno abierto"
 // ==============================
-let pausedByLegend = false;
+const ALL_OVERLAYS = [legendScreen, modeScreen, achievementsScreen, leaderboardScreen, nameEntryScreen];
 
-function showLegend() {
-  legendScreen.classList.remove("hidden");
+function anyOverlayOpen() {
+  return ALL_OVERLAYS.some((el) => !el.classList.contains("hidden"));
+}
+
+let pausedByOverlay = false;
+
+function pauseForOverlay() {
   if (!gameOver && !paused) {
-    pausedByLegend = true;
+    pausedByOverlay = true;
     paused = true;
     pauseScreen.classList.remove("hidden");
   }
 }
 
-function hideLegend() {
-  legendScreen.classList.add("hidden");
-  localStorage.setItem("snake-seen-legend", "true");
-  if (pausedByLegend) {
-    pausedByLegend = false;
+function resumeFromOverlay() {
+  if (pausedByOverlay) {
+    pausedByOverlay = false;
     paused = false;
     pauseScreen.classList.add("hidden");
   }
 }
 
+// ==============================
+// LEYENDA DE COLORES (onboarding didáctico)
+// ==============================
+function showLegend() {
+  pauseForOverlay();
+  legendScreen.classList.remove("hidden");
+}
+
+function hideLegend() {
+  legendScreen.classList.add("hidden");
+  localStorage.setItem("snake-seen-legend", "true");
+  resumeFromOverlay();
+}
+
 legendBtn.addEventListener("click", showLegend);
 legendCloseBtn.addEventListener("click", hideLegend);
+
+// ==============================
+// MODOS DE JUEGO (selección)
+// ==============================
+function highlightCurrentMode() {
+  modeOptionButtons.forEach((btn) => {
+    btn.classList.toggle("selected", btn.dataset.mode === currentMode.id);
+  });
+}
+
+function showModeScreen() {
+  pauseForOverlay();
+  highlightCurrentMode();
+  modeScreen.classList.remove("hidden");
+}
+
+function hideModeScreen() {
+  modeScreen.classList.add("hidden");
+  resumeFromOverlay();
+}
+
+modeBtn.addEventListener("click", showModeScreen);
+modeCancelBtn.addEventListener("click", hideModeScreen);
+
+modeOptionButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    currentMode = MODES[btn.dataset.mode];
+    modeScreen.classList.add("hidden");
+    pausedByOverlay = false;
+    resetGame();
+  });
+});
+
+// ==============================
+// LOGROS
+// ==============================
+let toastQueue = [];
+let toastShowing = false;
+
+function showAchievementToast(id) {
+  const def = ACHIEVEMENTS.find((a) => a.id === id);
+  if (!def) return;
+  toastQueue.push(def);
+  if (!toastShowing) processToastQueue();
+}
+
+function processToastQueue() {
+  const next = toastQueue.shift();
+  if (!next) {
+    toastShowing = false;
+    return;
+  }
+  toastShowing = true;
+  achievementToast.textContent = `🏅 ¡Logro desbloqueado! ${next.title}`;
+  achievementToast.classList.add("show");
+  setTimeout(() => {
+    achievementToast.classList.remove("show");
+    setTimeout(processToastQueue, 300);
+  }, 2500);
+}
+
+function checkAchievements() {
+  const unlocked = new Set(JSON.parse(localStorage.getItem("snake-achievements") || "[]"));
+  const newly = [];
+  const tryUnlock = (id) => {
+    if (!unlocked.has(id)) {
+      unlocked.add(id);
+      newly.push(id);
+    }
+  };
+
+  if (score >= 1) tryUnlock("primera-manzana");
+  if (snake.length >= 10) tryUnlock("serpiente-larga");
+  if (score >= 10) tryUnlock("diez-puntos");
+  if (!gameOver && Date.now() - runStartedAt >= 30000) tryUnlock("treinta-segundos");
+  if (gamesPlayed >= 5) tryUnlock("cinco-partidas");
+  if (modesPlayed.size >= 3) tryUnlock("explorador");
+
+  if (newly.length) {
+    localStorage.setItem("snake-achievements", JSON.stringify([...unlocked]));
+    newly.forEach(showAchievementToast);
+  }
+}
+
+function renderAchievements() {
+  const unlocked = new Set(JSON.parse(localStorage.getItem("snake-achievements") || "[]"));
+  achievementsList.innerHTML = "";
+
+  ACHIEVEMENTS.forEach((a) => {
+    const isUnlocked = unlocked.has(a.id);
+    const li = document.createElement("li");
+    li.className = `achievement ${isUnlocked ? "unlocked" : "locked"}`;
+
+    const icon = document.createElement("span");
+    icon.className = "achievement-icon";
+    icon.textContent = isUnlocked ? "🏅" : "🔒";
+
+    const text = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = a.title;
+    const desc = document.createElement("span");
+    desc.className = "achievement-desc";
+    desc.textContent = a.desc;
+    text.append(title, document.createElement("br"), desc);
+
+    li.append(icon, text);
+    achievementsList.appendChild(li);
+  });
+}
+
+function showAchievementsScreen() {
+  pauseForOverlay();
+  renderAchievements();
+  achievementsScreen.classList.remove("hidden");
+}
+
+function hideAchievementsScreen() {
+  achievementsScreen.classList.add("hidden");
+  resumeFromOverlay();
+}
+
+achievementsBtn.addEventListener("click", showAchievementsScreen);
+achievementsCloseBtn.addEventListener("click", hideAchievementsScreen);
+
+// ==============================
+// TABLA DE MEJORES PUNTAJES (local)
+// ==============================
+function getLeaderboard() {
+  try {
+    return JSON.parse(localStorage.getItem("snake-leaderboard")) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLeaderboard(list) {
+  localStorage.setItem("snake-leaderboard", JSON.stringify(list));
+}
+
+function qualifiesForLeaderboard(s) {
+  if (s <= 0) return false;
+  const list = getLeaderboard();
+  if (list.length < 5) return true;
+  return s > Math.min(...list.map((entry) => entry.score));
+}
+
+function addToLeaderboard(name, s, modeLabel) {
+  const list = getLeaderboard();
+  list.push({ name: name || "Jugador", score: s, mode: modeLabel });
+  list.sort((a, b) => b.score - a.score);
+  saveLeaderboard(list.slice(0, 5));
+}
+
+function createLeaderboardRow(entry, rank) {
+  const li = document.createElement("li");
+  li.className = "leaderboard-row";
+
+  const rankEl = document.createElement("span");
+  rankEl.className = "leaderboard-rank";
+  rankEl.textContent = `${rank}.`;
+
+  const nameEl = document.createElement("span");
+  nameEl.className = "leaderboard-name";
+  nameEl.textContent = entry.name;
+
+  const scoreEl2 = document.createElement("span");
+  scoreEl2.className = "leaderboard-score";
+  scoreEl2.textContent = entry.score;
+
+  const modeEl = document.createElement("span");
+  modeEl.className = "leaderboard-mode";
+  modeEl.textContent = entry.mode;
+
+  li.append(rankEl, nameEl, scoreEl2, modeEl);
+  return li;
+}
+
+function renderLeaderboard() {
+  const list = getLeaderboard();
+  leaderboardList.innerHTML = "";
+
+  if (list.length === 0) {
+    const li = document.createElement("li");
+    li.className = "leaderboard-empty";
+    li.textContent = "Todavía no hay puntajes. ¡Jugá para ser el primero!";
+    leaderboardList.appendChild(li);
+    return;
+  }
+
+  list.forEach((entry, i) => leaderboardList.appendChild(createLeaderboardRow(entry, i + 1)));
+}
+
+function showLeaderboardScreen() {
+  pauseForOverlay();
+  renderLeaderboard();
+  leaderboardScreen.classList.remove("hidden");
+}
+
+function hideLeaderboardScreen() {
+  leaderboardScreen.classList.add("hidden");
+  resumeFromOverlay();
+}
+
+leaderboardBtn.addEventListener("click", showLeaderboardScreen);
+leaderboardCloseBtn.addEventListener("click", hideLeaderboardScreen);
+
+nameSaveBtn.addEventListener("click", () => {
+  const name = nameInput.value.trim().slice(0, 12) || "Jugador";
+  addToLeaderboard(name, pendingScore, currentMode.label);
+  nameEntryScreen.classList.add("hidden");
+  nameInput.value = "";
+});
+
+nameInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") nameSaveBtn.click();
+});
 
 // ==============================
 // PWA: instalación y service worker

@@ -1,4 +1,4 @@
-const CACHE_NAME = "snake-cache-v1";
+const CACHE_NAME = "snake-cache-v2";
 const PRECACHE_URLS = [
   "./",
   "./index.html",

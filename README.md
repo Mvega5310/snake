@@ -32,7 +32,26 @@ mientras se lee, para que nadie choque mientras aprende las reglas.
 | Moverse           | Flechas           | Deslizar el dedo    |
 | Pausar / reanudar | Barra espaciadora | —                   |
 | Reiniciar         | Botón "Reiniciar" | Botón "Reiniciar"   |
+| Elegir modo       | Botón 🎮          | Botón 🎮            |
+| Ver logros        | Botón 🏅          | Botón 🏅            |
+| Ver mejores puntajes | Botón 🏆       | Botón 🏆            |
 | Silenciar sonido  | Botón 🔊 / 🔇     | Botón 🔊 / 🔇       |
+
+## Retos
+
+**Modos de juego** (botón 🎮, se elige antes de cada partida):
+- **Clásico** — los bordes matan, la velocidad sube con el puntaje.
+- **Sin Paredes** — atravesás los bordes y aparecés del otro lado (teletransporte).
+- **Modo Calma** — velocidad fija y más lenta, pensado para aprender sin presión de tiempo.
+
+**Logros** (botón 🏅, se guardan en `localStorage`): primera manzana, serpiente de
+10 segmentos, 10 puntos, sobrevivir 30 segundos, jugar 5 partidas y probar los 3
+modos. Se avisan con un toast al desbloquearse.
+
+**Mejores puntajes** (botón 🏆): top 5 local guardado en `localStorage`, con nombre
+y modo jugado. Al terminar una partida que entra al top 5, se pide un nombre antes
+de volver a la pantalla de Game Over. *(Es un ranking local, no compartido entre
+jugadores — un ranking global requeriría un backend.)*
 
 ## 1. Objetivo
 Prototipo de Snake en JavaScript puro + Canvas, pensado como base de aprendizaje del
@@ -101,14 +120,28 @@ speedMs = 130                                             // intervalo actual de
 
 ### 3.4 Funciones principales (en `game.js`)
 - `update()` — mueve la cabeza según `direction`, detecta colisión con comida/borde/cuerpo
+  (o la teletransporta en "Sin Paredes"), llama a `checkAchievements()`
 - `draw()` — limpia y redibuja canvas completo cada tick
-- `speedUp()` — recalcula el intervalo del loop según el puntaje
+- `speedUp()` — recalcula el intervalo del loop según el puntaje (no-op en Modo Calma)
 - `togglePause()` — pausa/reanuda el juego (barra espaciadora)
+- `pauseForOverlay()` / `resumeFromOverlay()` — pausan el juego mientras cualquier
+  overlay (leyenda, modos, logros, puntajes) está abierto, y lo reanudan al cerrarlo
+- `anyOverlayOpen()` — usado por el listener de teclado para no mover la serpiente
+  ni togglear la pausa mientras hay un overlay tapando el juego
+- `checkAchievements()` / `showAchievementToast()` — detectan y avisan logros nuevos
+- `qualifiesForLeaderboard()` / `addToLeaderboard()` — tabla de top 5 en `localStorage`
 - `beep()` / `playEatSound()` / `playGameOverSound()` — sonido generado con Web Audio API,
   sin archivos de audio externos
-- `resetGame()` — reinicia todo el estado y redibuja de inmediato
+- `resetGame()` — reinicia todo el estado (según `currentMode`) y redibuja de inmediato
 - `gameLoop()` — orquesta update → draw → repetir (se salta si `gameOver` o `paused`)
 - Listeners de `keydown` (teclado + pausa) y `touchstart`/`touchend` (swipe móvil)
+
+### 3.5 Service worker y versionado de caché
+`sw.js` cachea los archivos estáticos con una estrategia *cache-first*. Si se edita
+cualquier archivo cacheado (`index.html`, `style.css`, `game.js`, íconos, etc.), hay
+que **subir el número en `CACHE_NAME`** (ej. `snake-cache-v2`) dentro de `sw.js` —
+si no, quienes ya instalaron el juego van a seguir viendo la versión vieja para
+siempre, porque el fetch handler nunca vuelve a pedir esos archivos a la red.
 
 ## 4. Roadmap incremental
 1. ✅ Movimiento + colisiones + comida (prototipo base)
@@ -119,9 +152,10 @@ speedMs = 130                                             // intervalo actual de
 6. ✅ Despliegue continuo a GitHub Pages vía GitHub Actions
 7. ✅ PWA instalable y offline (manifest + service worker + íconos)
 8. ✅ Rediseño con psicología del color + leyenda didáctica
-9. 🚧 Modos de juego (Clásico / Sin Paredes / Modo Calma)
-10. 🚧 Logros y misiones guardados localmente
-11. 🚧 Tabla de mejores puntajes local (top 5)
+9. ✅ Modos de juego (Clásico / Sin Paredes / Modo Calma)
+10. ✅ Logros y misiones guardados localmente
+11. ✅ Tabla de mejores puntajes local (top 5)
+12. 🚧 Ranking global compartido (requeriría backend)
 
 ## 5. Siguiente paso: Tetris
 Reutilizamos exactamente este mismo patrón de Game Loop y estructura de carpetas.

@@ -21,6 +21,9 @@
       <span>Puntaje: <strong id="score" aria-live="polite">0</strong></span>
       <span>Máximo: <strong id="highscore">0</strong></span>
       <div class="hud-buttons">
+        <button id="modeBtn" aria-label="Elegir modo de juego">🎮</button>
+        <button id="achievementsBtn" aria-label="Ver logros">🏅</button>
+        <button id="leaderboardBtn" aria-label="Ver mejores puntajes">🏆</button>
         <button id="legendBtn" aria-label="Ver qué significan los colores">❔</button>
         <button id="muteBtn" aria-label="Silenciar sonido" aria-pressed="false">🔊</button>
       </div>
@@ -55,6 +58,54 @@
       <button id="legendCloseBtn">¡Entendido, a jugar!</button>
     </div>
   </div>
+
+  <div id="modeScreen" class="overlay hidden">
+    <div class="legend-card">
+      <h2>🎮 Elegí un modo</h2>
+      <div class="mode-list">
+        <button class="mode-option" data-mode="classic" type="button">
+          <strong>Clásico</strong>
+          <span>Los bordes matan y la velocidad sube con el puntaje.</span>
+        </button>
+        <button class="mode-option" data-mode="noWalls" type="button">
+          <strong>Sin Paredes</strong>
+          <span>Atravesá los bordes y aparecé del otro lado del tablero.</span>
+        </button>
+        <button class="mode-option" data-mode="calm" type="button">
+          <strong>Modo Calma</strong>
+          <span>Velocidad fija y más lenta — ideal para aprender sin presión.</span>
+        </button>
+      </div>
+      <button id="modeCancelBtn" class="secondary-btn">Cancelar</button>
+    </div>
+  </div>
+
+  <div id="achievementsScreen" class="overlay hidden">
+    <div class="legend-card">
+      <h2>🏅 Logros</h2>
+      <ul id="achievementsList" class="achievements-list"></ul>
+      <button id="achievementsCloseBtn">Cerrar</button>
+    </div>
+  </div>
+
+  <div id="leaderboardScreen" class="overlay hidden">
+    <div class="legend-card">
+      <h2>🏆 Mejores puntajes</h2>
+      <ol id="leaderboardList" class="leaderboard-list"></ol>
+      <button id="leaderboardCloseBtn">Cerrar</button>
+    </div>
+  </div>
+
+  <div id="nameEntryScreen" class="overlay hidden">
+    <div class="legend-card">
+      <h2>🏆 ¡Nuevo puntaje top 5!</h2>
+      <p class="name-entry-sub">Puntaje: <strong id="nameEntryScore">0</strong></p>
+      <input id="nameInput" type="text" maxlength="12" placeholder="Tu nombre" autocomplete="off" />
+      <button id="nameSaveBtn">Guardar</button>
+    </div>
+  </div>
+
+  <div id="achievementToast" class="toast" aria-live="polite"></div>
 
   <script src="game.js"></script>
 </body>
